@@ -26,6 +26,7 @@ from task_utils.robot_desiredState import PickAndPlaceSm
 from task_utils.setting_config import device
 from task_utils.setting_config import env
 from task_utils.visual_utils import robot_camera
+from task_utils.visual_utils import front_camera
 print(f"Environment reset. Number of environments: {env.unwrapped.num_envs}")
 
 # seed for reproducibility
@@ -35,9 +36,13 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 import matplotlib.pyplot as plt
+import os
+import matplotlib.pyplot as plt
+save_dir = "/tmp/images"
+os.makedirs(save_dir, exist_ok=True)
 
 
-max_steps = 300
+max_steps = 500
 episodes=5
 
 pick_and_place_sm = PickAndPlaceSm(
@@ -75,9 +80,24 @@ for ep in range(episodes):
         img_np = image_.squeeze().detach().cpu().numpy()
         normalized_image = (image - image.min()) / (image.max() - image.min())
         rgb_img = normalized_image.permute(1, 2, 0).detach().cpu().numpy()
+        # 파일명 자동 증가
+
         plt.imshow(rgb_img)
         plt.title("Normalized RGB")
-        plt.show()
+        fname = os.path.join(save_dir, f"wristCam_{int(steps)}.png")
+        plt.savefig(fname)
+        plt.close()
+
+        image_ = front_camera.data.output["rgb"][0]
+        image = image_.permute(2, 0, 1).squeeze()          #(height, width, channels) 로 변환
+        img_np = image_.squeeze().detach().cpu().numpy()
+        normalized_image = (image - image.min()) / (image.max() - image.min())
+        rgb_img = normalized_image.permute(1, 2, 0).detach().cpu().numpy()
+        plt.imshow(rgb_img)
+        plt.title("Normalized RGB")
+        fname = os.path.join(save_dir, f"frontCam_{int(steps)}.png")
+        plt.savefig(fname)
+        plt.close()
 
         obs, _, terminated, truncated, info = env.step(actions)
         steps += 1

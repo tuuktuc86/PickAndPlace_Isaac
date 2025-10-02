@@ -15,11 +15,13 @@ from task_utils.setting_config import device
 from task_utils.setting_config import env
 
 # Contact-GraspNet 모델 라이브러리 임포트
-from cgnet.utils.config import cfg_from_yaml_file
-from cgnet.tools import builder
-from cgnet.inference_cgnet import inference_cgnet
+# from cgnet.utils.config import cfg_from_yaml_file
+# from cgnet.tools import builder
+# from cgnet.inference_cgnet import inference_cgnet
 
 import carb
+from isaacsim.sensors.camera import Camera
+import isaacsim.core.utils.numpy.rotations as rot_utils
 carb_settings_iface = carb.settings.get_settings()
 carb_settings_iface.set_bool("/isaaclab/cameras_enabled", True)
 
@@ -88,27 +90,54 @@ def get_model_instance_segmentation(num_classes):
     return model
 
 
-# Detection 모델 로드
-NUM_CLASSES = 79
-detection_model = get_model_instance_segmentation(NUM_CLASSES)
-detection_model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-detection_model.eval()
-detection_model.to(device)
+# # Detection 모델 로드
+# NUM_CLASSES = 79
+# detection_model = get_model_instance_segmentation(NUM_CLASSES)
+# detection_model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+# detection_model.eval()
+# detection_model.to(device)
 
-# Contact-GraspNet 모델 config를 불러오기 위한 경로 설정
-grasp_model_config_path = os.path.join(DIR_PATH, 'cgnet/configs/config.yaml')
-grasp_model_config = cfg_from_yaml_file(grasp_model_config_path)
+# # Contact-GraspNet 모델 config를 불러오기 위한 경로 설정
+# grasp_model_config_path = os.path.join(DIR_PATH, 'cgnet/configs/config.yaml')
+# grasp_model_config = cfg_from_yaml_file(grasp_model_config_path)
 
-# Contact-GraspNet 모델 선언 및 checkpoint 입력을 통한 모델 weight 로드
-grasp_model = builder.model_builder(grasp_model_config.model)
-grasp_model_path = os.path.join(DIR_PATH, 'data/checkpoint/contact_grasp_ckpt/ckpt-iter-60000_gc6d.pth')
-builder.load_model(grasp_model, grasp_model_path)
-grasp_model.to(device)
-grasp_model.eval()
+# # Contact-GraspNet 모델 선언 및 checkpoint 입력을 통한 모델 weight 로드
+# grasp_model = builder.model_builder(grasp_model_config.model)
+# grasp_model_path = os.path.join(DIR_PATH, 'data/checkpoint/contact_grasp_ckpt/ckpt-iter-60000_gc6d.pth')
+# builder.load_model(grasp_model, grasp_model_path)
+# grasp_model.to(device)
+# grasp_model.eval()
 
+# def load_cam():
+    
+    
+    
 
+# load_cam()
+#print("sensors:", list(env.unwrapped.scene.sensors.keys()))
 robot_camera = env.unwrapped.scene.sensors['camera']
+front_camera = env.unwrapped.scene.sensors['front_camera']
+# #front_camera.set_world_poses(np.array([3.7245, 0.218, 1.053]), rot_utils.euler_angles_to_quats(np.array([88, 0, 90]), degrees=True))
+# angles = torch.tensor([[88.0, 0.0, 90.0]], dtype=torch.float32)
+# quat_xyzw = rot_utils.euler_angles_to_quats(angles, degrees=True)   # (N,4) xyzw
+# quat_wxyz = quat_xyzw[:, [3,0,1,2]]                                # 재배열
+# front_camera.set_world_poses(
+#     positions=torch.tensor([[3.7245, 0.218, 1.053]], dtype=torch.float32),
+#     orientations=quat_wxyz,
+#     convention="ros"
+# )
+# pos1 = torch.tensor([[3.7245, 0.218, 1.053]], dtype=torch.float32, device=torch.device("cuda:0"))
 
-# 카메라 인트린식(intrinsics)
-K = robot_camera.data.intrinsic_matrices.squeeze().cpu().numpy()
+# # euler → quat(xyzw) → quat(wxyz)
+# angles = torch.tensor([[88.0, 0.0, 90.0]], dtype=torch.float32, device=torch.device("cuda:0"))
+# quat_xyzw = rot_utils.euler_angles_to_quats(angles, degrees=True)          # (1,4) xyzw
+# quat_wxyz = quat_xyzw[:, [3, 0, 1, 2]].contiguous()                        # (1,4) wxyz
+
+# # env 개수만큼 반복 + env_ids 지정
+# num_envs = env.unwrapped.scene.num_envs
+# positions = pos1.expand(num_envs, -1).clone()
+# orientations = quat_wxyz.expand(num_envs, -1).clone()
+# env_ids = torch.arange(num_envs, device=torch.device("cuda:0"), dtype=torch.long)
+
+# front_camera.set_world_poses(positions=positions, orientations=orientations, env_ids=env_ids, convention="ros")
 
