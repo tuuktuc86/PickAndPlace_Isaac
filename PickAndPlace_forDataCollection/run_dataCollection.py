@@ -11,12 +11,22 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
-from env import set_env_dataCollection
 
+
+from env import set_env_dataCollection
+import carb
+carb_settings_iface = carb.settings.get_settings()
+carb_settings_iface.set_bool("/isaaclab/cameras_enabled", True)
 # import os, sys
 # sys.path.insert(0, os.path.dirname(__file__))  # 로컬 최우선
 #from utils.visual_utils import * 
 from task_utils.robot_desiredState import PickAndPlaceSm
+
+#load env and device
+from task_utils.setting_config import device
+from task_utils.setting_config import env
+from task_utils.visual_utils import robot_camera
+print(f"Environment reset. Number of environments: {env.unwrapped.num_envs}")
 
 # seed for reproducibility
 set_seed()  # e.g. `set_seed(42)` for fixed seed
@@ -24,16 +34,7 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 
-# load and wrap the Isaac Lab environment
-env = set_env_dataCollection.make_env()
-
-device = env.device
-print(f"Environment reset. Number of environments: {env.unwrapped.num_envs}")
-
-
-
-
-
+import matplotlib.pyplot as plt
 
 
 max_steps = 300
@@ -48,13 +49,13 @@ pick_and_place_sm = PickAndPlaceSm(
 
 for ep in range(episodes):
     obs, _ = env.reset()
-    ep_ret = 0.0
     steps = 0
 
     while True:
-        pick_and_place_sm.grasp_pose = torch.tensor([[ 3.0280e-01, -5.6916e-02,  3.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10]], device=device)
-        pick_and_place_sm.pregrasp_pose = torch.tensor([[ 3.0280e-01, -5.6916e-02,  0.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10]], device=device)
+        pick_and_place_sm.grasp_pose = torch.tensor([[ 3.0280e-01, -5.6916e-02,  3.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10], [ 3.0280e-01, -5.6916e-02,  3.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10]], device=device)
+        pick_and_place_sm.pregrasp_pose = torch.tensor([[ 3.0280e-01, -5.6916e-02,  0.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10], [ 3.0280e-01, -5.6916e-02,  0.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10]], device=device)
         # 로봇의 End-Effector 위치와 자세를 기반으로 actions 계산
+
         robot_data = env.unwrapped.scene["robot"].data
         ee_frame_sensor = env.unwrapped.scene["ee_frame"]
         tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
@@ -69,7 +70,15 @@ for ep in range(episodes):
             robot_data=robot_data,
         )
         
-    
+        image_ = robot_camera.data.output["rgb"][0]
+        image = image_.permute(2, 0, 1).squeeze()          #(height, width, channels) 로 변환
+        img_np = image_.squeeze().detach().cpu().numpy()
+        normalized_image = (image - image.min()) / (image.max() - image.min())
+        rgb_img = normalized_image.permute(1, 2, 0).detach().cpu().numpy()
+        plt.imshow(rgb_img)
+        plt.title("Normalized RGB")
+        plt.show()
+
         obs, _, terminated, truncated, info = env.step(actions)
         steps += 1
 

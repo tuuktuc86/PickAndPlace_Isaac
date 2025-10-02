@@ -11,6 +11,8 @@ Pointnet_Pointnet2_pytorch/
 failure_case/*
 success_traj/*
 runs/*
+
+PickAndPlace_forDataCollection/cgnet/*
 # Model files
 *.ckpt
 *.pth

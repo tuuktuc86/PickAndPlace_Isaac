@@ -23,12 +23,12 @@ from isaaclab_assets.robots.franka import FRANKA_PANDA_HIGH_PD_CFG  # isort: ski
 
 
 ##
-# Rigid object lift environment.
+# Rigid object PickAndPlace environment.
 ##
 
 
 @configclass
-class FrankaCubeLiftEnvCfg(joint_pos_env_cfg.FrankaCubeLiftEnvCfg):
+class FrankaCubePickAndPlaceEnvCfg(joint_pos_env_cfg.FrankaCubePickAndPlaceEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -52,7 +52,7 @@ class FrankaCubeLiftEnvCfg(joint_pos_env_cfg.FrankaCubeLiftEnvCfg):
 
 
 @configclass
-class FrankaCubeLiftEnvCfg_PLAY(FrankaCubeLiftEnvCfg):
+class FrankaCubePickAndPlaceEnvCfg_PLAY(FrankaCubePickAndPlaceEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -64,12 +64,12 @@ class FrankaCubeLiftEnvCfg_PLAY(FrankaCubeLiftEnvCfg):
 
 
 ##
-# Deformable object lift environment.
+# Deformable object PickAndPlace environment.
 ##
 
 
 @configclass
-class FrankaTeddyBearLiftEnvCfg(FrankaCubeLiftEnvCfg):
+class FrankaTeddyBearPickAndPlaceEnvCfg(FrankaCubePickAndPlaceEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()

@@ -2,13 +2,26 @@ import sys
 import os
 import torch
 import cv2
+import numpy as np
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
 # Detection 모델 라이브러리 임포트
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 import torchvision
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from task_utils.setting_config import device
+from task_utils.setting_config import env
+
+# Contact-GraspNet 모델 라이브러리 임포트
+from cgnet.utils.config import cfg_from_yaml_file
+from cgnet.tools import builder
+from cgnet.inference_cgnet import inference_cgnet
+
+import carb
+carb_settings_iface = carb.settings.get_settings()
+carb_settings_iface.set_bool("/isaaclab/cameras_enabled", True)
 
 
 DIR_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -73,4 +86,29 @@ def get_model_instance_segmentation(num_classes):
     hidden_layer = 256
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, hidden_layer, num_classes)
     return model
+
+
+# Detection 모델 로드
+NUM_CLASSES = 79
+detection_model = get_model_instance_segmentation(NUM_CLASSES)
+detection_model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+detection_model.eval()
+detection_model.to(device)
+
+# Contact-GraspNet 모델 config를 불러오기 위한 경로 설정
+grasp_model_config_path = os.path.join(DIR_PATH, 'cgnet/configs/config.yaml')
+grasp_model_config = cfg_from_yaml_file(grasp_model_config_path)
+
+# Contact-GraspNet 모델 선언 및 checkpoint 입력을 통한 모델 weight 로드
+grasp_model = builder.model_builder(grasp_model_config.model)
+grasp_model_path = os.path.join(DIR_PATH, 'data/checkpoint/contact_grasp_ckpt/ckpt-iter-60000_gc6d.pth')
+builder.load_model(grasp_model, grasp_model_path)
+grasp_model.to(device)
+grasp_model.eval()
+
+
+robot_camera = env.unwrapped.scene.sensors['camera']
+
+# 카메라 인트린식(intrinsics)
+K = robot_camera.data.intrinsic_matrices.squeeze().cpu().numpy()
 

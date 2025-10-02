@@ -41,7 +41,7 @@ args_cli.headless = True
 
 
 
-num_envs =10 #please check headless. or it may cause a probnlem
+num_envs = 2 #please check headless. or it may cause a probnlem
 
 if num_envs > 20:
     args_cli.headless = True

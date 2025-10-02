@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from isaaclab.assets import RigidObjectCfg
-from isaaclab.sensors import FrameTransformerCfg
+from isaaclab.sensors import FrameTransformerCfg, CameraCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
@@ -19,6 +19,7 @@ from env.PickAndPlace_env_cfg import PickAndPlaceEnvCfg
 ##
 from isaaclab.markers.config import FRAME_MARKER_CFG  # isort: skip
 from isaaclab_assets.robots.franka import FRANKA_PANDA_CFG  # isort: skip
+from isaaclab.sim import PinholeCameraCfg               # 핀홀 카메라 모델 설정
 
 
 @configclass
@@ -60,6 +61,19 @@ class FrankaCubePickAndPlaceEnvCfg(PickAndPlaceEnvCfg):
                     disable_gravity=False,
                 ),
             ),
+        )
+
+        # 4. 카메라 센서 설정 (handeye 카메라: 프랑카 손 끝에 부착)
+        self.scene.camera = CameraCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/panda_hand/handeye_camera",      # 카메라가 위치할 prim 경로
+            update_period=0.1,      # 시뮬레이션 업데이트 간격(초)
+            height=480, width=640,  # 해상도
+            data_types=["rgb", "distance_to_image_plane"],      # RGB+Depth
+            spawn=PinholeCameraCfg(
+                focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+            ),
+            # 카메라 위치/방향 오프셋 (ROS convention, Z축 90도 회전)
+            offset=CameraCfg.OffsetCfg(pos=(0.1, 0.035, 0.0), rot=(0.70710678, 0.0, 0.0, 0.70710678), convention="ros"),
         )
 
         # Listens to the required transforms
