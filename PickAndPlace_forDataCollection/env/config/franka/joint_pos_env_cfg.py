@@ -48,7 +48,8 @@ class FrankaCubePickAndPlaceEnvCfg(PickAndPlaceEnvCfg):
         # Set Cube as object
         self.scene.object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.45, 0, 0.055], rot=[1, 0, 0, 0]),
+            # init_state=RigidObjectCfg.InitialStateCfg(pos=[0.45, 0, 0.055], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[3.0280e-01, -5.6916e-02, 0.055], rot=[1, 0, 0, 0]),
             spawn=UsdFileCfg(
                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
                 scale=(0.8, 0.8, 0.8),

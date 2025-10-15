@@ -3,6 +3,7 @@ import os
 import torch
 import cv2
 import numpy as np
+import random
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
 # Detection 모델 라이브러리 임포트
@@ -89,7 +90,9 @@ def get_model_instance_segmentation(num_classes):
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, hidden_layer, num_classes)
     return model
 
-
+def get_random_color():
+    """ 시각화를 위해 랜덤 RGB 색상을 생성합니다. """
+    return [random.randint(50, 255) for _ in range(3)] # 너무 어둡지 않은 색상
 # # Detection 모델 로드
 # NUM_CLASSES = 79
 # detection_model = get_model_instance_segmentation(NUM_CLASSES)
@@ -116,28 +119,24 @@ def get_model_instance_segmentation(num_classes):
 # load_cam()
 #print("sensors:", list(env.unwrapped.scene.sensors.keys()))
 robot_camera = env.unwrapped.scene.sensors['camera']
-front_camera = env.unwrapped.scene.sensors['front_camera']
-# #front_camera.set_world_poses(np.array([3.7245, 0.218, 1.053]), rot_utils.euler_angles_to_quats(np.array([88, 0, 90]), degrees=True))
-# angles = torch.tensor([[88.0, 0.0, 90.0]], dtype=torch.float32)
-# quat_xyzw = rot_utils.euler_angles_to_quats(angles, degrees=True)   # (N,4) xyzw
-# quat_wxyz = quat_xyzw[:, [3,0,1,2]]                                # 재배열
-# front_camera.set_world_poses(
-#     positions=torch.tensor([[3.7245, 0.218, 1.053]], dtype=torch.float32),
-#     orientations=quat_wxyz,
-#     convention="ros"
-# )
-# pos1 = torch.tensor([[3.7245, 0.218, 1.053]], dtype=torch.float32, device=torch.device("cuda:0"))
+# front_camera = env.unwrapped.scene.sensors['front_camera']
+robot_camera_K = robot_camera.data.intrinsic_matrices.squeeze().cpu().numpy()
 
-# # euler → quat(xyzw) → quat(wxyz)
-# angles = torch.tensor([[88.0, 0.0, 90.0]], dtype=torch.float32, device=torch.device("cuda:0"))
-# quat_xyzw = rot_utils.euler_angles_to_quats(angles, degrees=True)          # (1,4) xyzw
-# quat_wxyz = quat_xyzw[:, [3, 0, 1, 2]].contiguous()                        # (1,4) wxyz
+# num_envs = env.num_envs                  # 또는 self.num_envs
+# env_ids = torch.arange(num_envs, device=device, dtype=torch.int32)
 
-# # env 개수만큼 반복 + env_ids 지정
-# num_envs = env.unwrapped.scene.num_envs
-# positions = pos1.expand(num_envs, -1).clone()
-# orientations = quat_wxyz.expand(num_envs, -1).clone()
-# env_ids = torch.arange(num_envs, device=torch.device("cuda:0"), dtype=torch.long)
+# # (1) Euler → Quaternion (XYZ 순서, degree 단위)
+# quat_xyzw = rot_utils.euler_angles_to_quats(
+#     np.array([88, 0, 90]), degrees=True
+# )  # numpy array shape (4,)
 
-# front_camera.set_world_poses(positions=positions, orientations=orientations, env_ids=env_ids, convention="ros")
+# # (2) Tensor 변환 및 반복
+# quat = torch.tensor(quat_xyzw, dtype=torch.float32, device=device).repeat(num_envs, 1)
+#orientation에는 2가지 문제가 있다. 첫째는 orientation을 잘 맞춰야 한다는 것이다. 아마 뒤로 돌려야될 것 같다. 두번째는 env당 별개로 분리되어 있지 않다. world 좌표계 기준으로 세팅하는 데에 주의가 필요하다. 
 
+
+# # (3) 위치 벡터
+# pos = torch.tensor([[3.7245, 0.218, 1.053]], dtype=torch.float32, device=device).repeat(num_envs, 1)
+
+# # (4) 적용
+# front_camera.set_world_poses(positions=pos, orientations=quat, env_ids=env_ids)

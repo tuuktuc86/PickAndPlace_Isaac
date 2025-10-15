@@ -79,7 +79,7 @@ class PickAndPlaceSm:
         self.des_gripper_state = torch.full((self.num_envs, 1), 0.0, device=self.device)
 
         # 물체 이미지를 취득하기 위한 준비 자세
-        self.ready_pose = torch.tensor([[ 3.0280e-01, -5.6916e-02,  6.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10]], device=self.device)  # (x, y, z, qw, qx, qy, qz)
+        self.ready_pose = torch.tensor([[ 3.0280e-01, -5.6916e-02,  3.2400e-01, -1.4891e-10,  1.0000e+00, 8.4725e-11, -8.7813e-10]], device=self.device)  # (x, y, z, qw, qx, qy, qz)
         self.ready_pose = self.ready_pose.repeat(num_envs, 1)
 
         # 물체를 상자에 두기 위해 상자 위에 위치하는 자세
